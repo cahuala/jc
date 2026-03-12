@@ -1,0 +1,167 @@
+'use client';
+
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react';
+import { useRouter } from 'next/navigation';
+
+interface User {
+  id: string;
+  nome: string;
+  email: string;
+  role:
+    | 'ADMIN_GLOBAL'
+    | 'ADMIN'
+    | 'GESTOR'
+    | 'MECANICO'
+    | 'RECEPCIONISTA'
+    | 'CAIXA';
+  perfil: 'ADMIN' | 'GERENTE' | 'FUNCIONARIO';
+  oficinaId?: string;
+}
+
+interface RegisterOficinaData {
+  nomeEmpresa: string;
+  nif: string;
+  telefone: string;
+  email: string;
+  provincia: string;
+  municipio: string;
+  endereco: string;
+  nomeAdministrador: string;
+  emailAdministrador: string;
+  password: string;
+}
+
+interface RegisterClienteData {
+  nome: string;
+  bi: string;
+  telefone: string;
+  email: string;
+  provincia: string;
+  municipio: string;
+  endereco: string;
+  password: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+  registerOficina: (data: RegisterOficinaData) => Promise<void>;
+  registerCliente: (data: RegisterClienteData) => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('flxmotor_user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    setLoading(false);
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Credenciais inválidas');
+      }
+
+      const data = await response.json();
+      setUser(data.user);
+      localStorage.setItem('flxmotor_user', JSON.stringify(data.user));
+      localStorage.setItem('flxmotor_token', data.token);
+
+      router.push('/dashboard/v1');
+    } catch (error) {
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const registerOficina = async (data: RegisterOficinaData) => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/auth/register-oficina', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao registar oficina');
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const registerCliente = async (data: RegisterClienteData) => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/auth/register-cliente', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao registar cliente');
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('flxmotor_user');
+    localStorage.removeItem('flxmotor_token');
+    router.push('/login');
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{ user, loading, login, logout, registerOficina, registerCliente }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}

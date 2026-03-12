@@ -1,0 +1,61 @@
+## 📋 Problemas Identificados
+
+### 1. FeriasTable.tsx
+- ❌ Interface `Ferias` definida localmente (deve vir do core)
+- ❌ Falta Context para gerenciar estado global
+- ❌ Erro de sintaxe na função `isEmAndamento` (falta `function` e `(`)
+- ❌ Falta usar o hook useFerias
+
+### 2. FeriasModal.ts ❌ Interface `Ferias` definida localx
+-mente (deve vir do core)
+- ❌ Dados mock de funcionários (deve usar FuncionarioContext)
+
+### 3. page.tsx (Férias)
+- ❌ Interface `FeriasDisplay` definida localmente (deve vir do core/context)
+
+### 4. useFerias.ts
+- ✅ Já existe hook funcional
+- ⚠️ Deve usar o FeriasContext para estado global
+
+## ✅ Solução Proposta
+
+### Passo 1: Criar FeriasContext
+- Criar `siv-platform/apps/frontend/src/contexts/FeriasContext.tsx`
+- Usar as interfaces do core `@fixmotor/core`
+- Implementar padrão igual ao FuncionarioContext e FolhaPagamentoContext
+
+### Passo 2: Criar/useFerias hook
+- Modificar `siv-platform/apps/frontend/src/hooks/useFerias.ts`
+- Importar e usar o FeriasContext
+
+### Passo 3: Corrigir FeriasTable.tsx
+- Remover interface local
+- Importar tipos do core/context
+- Corrigir erro de sintaxe na função isEmAndamento
+- Usar o hook useFerias
+
+### Passo 4: Corrigir FeriasModal.tsx
+- Remover interface local  
+- Usar FuncionarioContext para buscar funcionários reais
+
+### Passo 5: Atualizar page.tsx
+- Usar FeriasContext para estado global
+- Remover interface local redundante
+
+## 📁 Arquivos a Criar/Modificar
+
+### Novos
+1. `siv-platform/apps/frontend/src/contexts/FeriasContext.tsx`
+
+### Modificar
+1. `siv-platform/apps/frontend/src/hooks/useFerias.ts`
+2. `siv-platform/apps/frontend/src/components/funcionarios/FeriasTable.tsx`
+3. `siv-platform/apps/frontend/src/components/funcionarios/FeriasModal.tsx`
+4. `siv-platform/apps/frontend/src/app/funcionarios/ferias/page.tsx`
+
+## 🔗 Dependencies
+- `@fixmotor/core` (já existente)
+- FuncionarioContext (já existente)
+- useFerias hook (já existente mas precisa de ajustes)
+</parameter>
+<parameter name="path">/Users/cahuala/Downloads/FlxMotor/PLANO_CORRECAO_FERIAS.md</parameter>

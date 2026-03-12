@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste API Cliente</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        button { padding: 10px 20px; margin: 10px; font-size: 16px; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Teste API Cliente</h1>
+    
+    <button onclick="testarSemAuth()">Testar GET /cliente (SEM AUTH)</button>
+    <button onclick="testarComAuth()">Testar GET /cliente (COM AUTH)</button>
+    <button onclick="limpar()">Limpar</button>
+    
+    <h2>Resultado:</h2>
+    <div id="resultado"></div>
+    
+    <script>
+        const API_URL = 'http://localhost:3001';
+        
+        function mostrar(titulo, dados, sucesso = true) {
+            const div = document.getElementById('resultado');
+            const classe = sucesso ? 'success' : 'error';
+            div.innerHTML += `
+                <h3 class="${classe}">${titulo}</h3>
+                <pre>${JSON.stringify(dados, null, 2)}</pre>
+                <hr>
+            `;
+        }
+        
+        async function testarSemAuth() {
+            try {
+                console.log('Fazendo requisição SEM autenticação...');
+                const response = await fetch(`${API_URL}/cliente`);
+                console.log('Status:', response.status);
+                const data = await response.json();
+                console.log('Dados:', data);
+                mostrar('✅ Sucesso (SEM AUTH)', data, true);
+            } catch (error) {
+                console.error('Erro:', error);
+                mostrar('❌ Erro (SEM AUTH)', error.message, false);
+            }
+        }
+        
+        async function testarComAuth() {
+            try {
+                const token = localStorage.getItem('flxmotor_token');
+                if (!token) {
+                    mostrar('❌ Token não encontrado', 'Faça login primeiro', false);
+                    return;
+                }
+                
+                console.log('Fazendo requisição COM autenticação...');
+                console.log('Token:', token.substring(0, 20) + '...');
+                
+                const response = await fetch(`${API_URL}/cliente`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                console.log('Status:', response.status);
+                const data = await response.json();
+                console.log('Dados:', data);
+                mostrar('✅ Sucesso (COM AUTH)', data, true);
+            } catch (error) {
+                console.error('Erro:', error);
+                mostrar('❌ Erro (COM AUTH)', error.message, false);
+            }
+        }
+        
+        function limpar() {
+            document.getElementById('resultado').innerHTML = '';
+        }
+        
+        // Teste automático ao carregar
+        window.onload = () => {
+            console.log('Página carregada. Testando API...');
+            testarSemAuth();
+        };
+    </script>
+</body>
+</html>
