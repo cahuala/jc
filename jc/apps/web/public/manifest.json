@@ -1,0 +1,23 @@
+{
+  "name": "FlxMotor - Plataforma Automotiva de Angola",
+  "short_name": "FlxMotor",
+  "description": "Encontre oficinas certificadas e carros verificados em Angola",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#005b52",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["automotive", "business"],
+  "lang": "pt-AO"
+}

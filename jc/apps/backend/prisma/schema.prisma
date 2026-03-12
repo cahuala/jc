@@ -1,0 +1,1052 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//////////////////// ENUMS ////////////////////
+
+enum UserRole {
+  ADMIN
+  GESTOR
+  MECANICO
+  RECECIONISTA
+  CAIXA
+}
+
+enum StatusGeral {
+  ATIVO
+  INATIVO
+  SUSPENSO
+}
+
+enum StatusOrdemServico {
+  AGUARDANDO
+  EM_ANDAMENTO
+  CONCLUIDA
+  CANCELADA
+}
+
+enum StatusPagamento {
+  PENDENTE
+  PAGO
+  CANCELADO
+}
+
+enum StatusFuncionario {
+  ATIVO
+  INATIVO
+  FERIAS
+  LICENCA
+}
+
+enum Prioridade {
+  BAIXA
+  MEDIA
+  ALTA
+  URGENTE
+}
+
+enum StatusServico {
+  PENDENTE
+  EM_ANDAMENTO
+  CONCLUIDO
+  CANCELADO
+}
+
+enum StatusProduto {
+  ATIVO
+  INATIVO
+  DESCONTINUADO
+  ESGOTADO
+}
+
+enum TipoMovimentacao {
+  ENTRADA
+  SAIDA
+  AJUSTE
+  DEVOLUCAO
+  TRANSFERENCIA
+}
+
+enum TipoCombustivel {
+  GASOLINA
+  DIESEL
+  FLEX
+  ELETRICO
+  HIBRIDO
+  GAS
+}
+
+enum Genero {
+  MASCULINO
+  FEMININO
+  OUTRO
+}
+
+enum EstadoCivil {
+  SOLTEIRO
+  CASADO
+  DIVORCIADO
+  VIUVO
+  UNIAO_ESTAVEL
+}
+
+enum StatusAgendamento {
+  PENDENTE
+  CONFIRMADO
+  EM_ANDAMENTO
+  CONCLUIDO
+  CANCELADO
+  NAO_COMPARECEU
+}
+
+enum TipoAgendamento {
+  CONSULTA
+  SERVICO
+  REVISAO
+  DIAGNOSTICO
+  ORCAMENTO
+}
+
+enum TipoBackup {
+  AUTOMATICO
+  MANUAL
+}
+
+enum StatusBackup {
+  CONCLUIDO
+  FALHO
+  EM_ANDAMENTO
+  PENDENTE
+}
+
+enum StatusFatura {
+  PENDENTE
+  PAGA
+  VENCIDA
+  CANCELADA
+}
+
+enum StatusConta {
+  PENDENTE
+  VENCIDA
+  PAGA
+  CANCELADA
+}
+
+enum FormaPagamento {
+  DINHEIRO
+  MULTICAIXA
+  TRANSFERENCIA
+  CHEQUE
+  DEPOSITO
+  CREDITO
+  DEBITO
+}
+
+enum TipoMovimentoFinanceiro {
+  ENTRADA
+  SAIDA
+  TRANSFERENCIA
+}
+
+//////////////////// USUÁRIOS DO SISTEMA ////////////////////
+
+model Usuario {
+  id        String   @id @default(uuid())
+  nome      String
+  email     String   @unique
+  password  String
+  role      UserRole @default(MECANICO)
+  status    StatusGeral @default(ATIVO)
+  deleted   Boolean  @default(false)
+  deletedAt DateTime?
+
+  funcionario   Funcionario?
+  refreshToken String?
+  lastLogin    DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("usuarios")
+}
+
+//////////////////// CLIENTES ////////////////////
+
+model Cliente {
+  id              String    @id @default(uuid())
+  nome            String
+  email           String    @unique
+  telefone        String
+  nif             String?   @unique
+  bi              String?   @unique
+  dataEmissao     DateTime?
+  nomePai         String?
+  nomeMae         String?
+  dataNascimento  DateTime?
+  naturalidade    String?
+  genero          Genero?
+  estadoCivil     EstadoCivil?
+  endereco        String?
+  bairro          String?
+  provincia       String?
+  municipio       String?
+  observacoes     String?
+  status          StatusGeral @default(ATIVO)
+  deleted         Boolean   @default(false)
+  deletedAt       DateTime?
+
+  totalGasto      Decimal   @default(0)
+  totalServicos   Int       @default(0)
+  ultimoServico   DateTime?
+  proximaRevisao  DateTime?
+
+  viaturas        Viatura[]
+  ordensServico   OrdemServico[]
+  permissoes      PermissaoAcesso[]
+  historicos      HistoricoServico[]
+  faturas         Fatura[]
+  contasReceber   ContaReceber[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([telefone])
+  @@index([nif])
+  @@map("clientes")
+}
+
+//////////////////// VIATURAS ////////////////////
+
+model Viatura {
+  id            String         @id @default(uuid())
+  placa         String         @unique
+  marca         String
+  modelo        String
+  ano           Int
+  cor           String
+  combustivel   TipoCombustivel
+  numeroMotor   String?
+  numeroChassis String?
+  observacoes   String?
+  deleted       Boolean        @default(false)
+  deletedAt     DateTime?
+
+  ultimaManutencao DateTime?
+  proximaManutencao DateTime?
+  valorTotalServicos Decimal @default(0)
+  statusManutencao  String?
+
+  cliente   Cliente   @relation(fields: [clienteId], references: [id])
+  clienteId String
+
+  ordensServico   OrdemServico[]
+  permissoes      PermissaoAcesso[]
+  manutencoes     Manutencao[]
+  agendamentos     Agendamento[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([placa])
+  @@index([clienteId])
+  @@map("viaturas")
+}
+
+//////////////////// ORDENS DE SERVIÇO ////////////////////
+
+model OrdemServico {
+  id            String              @id @default(uuid())
+  numero        String              @unique
+  status        StatusOrdemServico  @default(AGUARDANDO)
+  prioridade    Prioridade          @default(MEDIA)
+  observacoes   String?
+  deleted       Boolean             @default(false)
+  deletedAt     DateTime?
+
+  dataAbertura  DateTime            @default(now())
+  dataPrevisao  DateTime?
+  dataFecho     DateTime?
+
+  valorTotal    Decimal            @default(0)
+  valorServicos Decimal            @default(0)
+  valorPecas    Decimal            @default(0)
+
+  cliente   Cliente   @relation(fields: [clienteId], references: [id])
+  clienteId String
+
+  viatura   Viatura   @relation(fields: [viaturaId], references: [id])
+  viaturaId String
+
+  mecanico   Funcionario? @relation(fields: [mecanicoId], references: [id])
+  mecanicoId String?
+
+  servicos     Servico[]
+  pecas        PecaOS[]
+  manutencao   Manutencao?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([numero])
+  @@index([clienteId])
+  @@index([viaturaId])
+  @@index([status])
+  @@map("ordens_servico")
+}
+
+//////////////////// SERVIÇOS NAS OS ////////////////////
+
+model Servico {
+  id             String          @id @default(uuid())
+  nome           String
+  preco          Decimal
+  status         StatusServico   @default(PENDENTE)
+  observacoes    String?
+  deleted        Boolean         @default(false)
+  deletedAt      DateTime?
+
+  ordemServico   OrdemServico    @relation(fields: [ordemServicoId], references: [id], onDelete: Cascade)
+  ordemServicoId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("servicos")
+}
+
+//////////////////// PEÇAS NAS OS ////////////////////
+
+model PecaOS {
+  id             String      @id @default(uuid())
+  nome           String
+  quantidade     Int
+  precoUnitario  Decimal
+  precoTotal     Decimal
+  deleted        Boolean     @default(false)
+  deletedAt      DateTime?
+
+  ordemServico   OrdemServico @relation(fields: [ordemServicoId], references: [id], onDelete: Cascade)
+  ordemServicoId String
+
+  produto   Produto?  @relation(fields: [produtoId], references: [id])
+  produtoId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("pecas_os")
+}
+
+//////////////////// FUNCIONÁRIOS ////////////////////
+
+model Funcionario {
+  id             String         @id @default(uuid())
+  nome           String
+  nif            String         @unique
+  telefone       String
+  email          String         @unique
+  cargo          String
+  departamento   String
+  salario        Decimal
+  dataAdmissao   DateTime
+  status         StatusFuncionario @default(ATIVO)
+  deleted        Boolean        @default(false)
+  deletedAt      DateTime?
+
+  bi             String?        @unique
+  dataEmissaoBI  DateTime?
+  nomePai        String?
+  nomeMae        String?
+  dataNascimento DateTime?
+  naturalidade   String?
+  genero         Genero?
+  estadoCivil    EstadoCivil?
+  endereco       String?
+  bairro         String?
+  provincia      String?
+  municipio      String?
+  foto           String?
+
+  usuario        Usuario?
+  ordensServico  OrdemServico[]
+  salarios       PagamentoSalario[]
+  faltas         Falta[]
+  ferias         Ferias[]
+  agendamentos   Agendamento[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([nif])
+  @@index([cargo])
+  @@map("funcionarios")
+}
+
+//////////////////// FALTAS ////////////////////
+
+model Falta {
+  id            String      @id @default(uuid())
+  data          DateTime
+  tipo          String
+  observacao    String?
+  deleted       Boolean     @default(false)
+  deletedAt     DateTime?
+
+  funcionario   Funcionario @relation(fields: [funcionarioId], references: [id])
+  funcionarioId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("faltas")
+}
+
+//////////////////// FÉRIAS ////////////////////
+
+model Ferias {
+  id            String      @id @default(uuid())
+  dataInicio    DateTime
+  dataFim       DateTime
+  dias          Int
+  observacao    String?
+  status        String
+  deleted       Boolean     @default(false)
+  deletedAt     DateTime?
+
+  funcionario   Funcionario @relation(fields: [funcionarioId], references: [id])
+  funcionarioId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("ferias")
+}
+
+//////////////////// PAGAMENTO DE SALÁRIO ////////////////////
+
+model PagamentoSalario {
+  id             String        @id @default(uuid())
+  mes            Int
+  ano            Int
+  salarioBase     Decimal
+  descontos      Decimal       @default(0)
+  bonus          Decimal       @default(0)
+  salarioLiquido Decimal
+  status         StatusPagamento @default(PENDENTE)
+  observacao     String?
+  deleted        Boolean       @default(false)
+  deletedAt      DateTime?
+
+  funcionario   Funcionario @relation(fields: [funcionarioId], references: [id])
+  funcionarioId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([funcionarioId, mes, ano])
+  @@map("pagamentos_salario")
+}
+
+//////////////////// CATEGORIAS DE PRODUTOS ////////////////////
+
+model Categoria {
+  id          String    @id @default(uuid())
+  nome        String
+  descricao   String?
+  ativa       Boolean   @default(true)
+  deleted     Boolean   @default(false)
+  deletedAt   DateTime?
+
+  parentId    String?
+  parent      Categoria?  @relation("CatPai", fields: [parentId], references: [id])
+  filhos      Categoria[] @relation("CatPai")
+
+  produtos    Produto[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categorias")
+}
+
+//////////////////// FORNECEDORES ////////////////////
+
+model Fornecedor {
+  id          String    @id @default(uuid())
+  nome        String
+  email       String?
+  telefone    String?
+  endereco    String?
+  nif         String?
+  pessoaContato String?
+  observacoes String?
+  ativo       Boolean   @default(true)
+  deleted     Boolean   @default(false)
+  deletedAt   DateTime?
+
+  compras     Compra[]
+  produtos    Produto[]
+  contasPagar ContaPagar[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("fornecedores")
+}
+
+//////////////////// PRODUTOS ////////////////////
+
+model Produto {
+  id              String        @id @default(uuid())
+  codigo          String        @unique
+  nome            String
+  descricao       String?
+  marca           String?
+  modelo          String?
+  precoCompra     Decimal
+  precoVenda      Decimal
+  estoque         Int           @default(0)
+  estoqueMinimo   Int           @default(0)
+  unidade         String        @default("UN")
+  localizacao     String?
+  status          StatusProduto @default(ATIVO)
+  deleted         Boolean       @default(false)
+  deletedAt       DateTime?
+
+  dataUltimaCompra DateTime?
+  dataUltimaVenda  DateTime?
+  margemLucro     Decimal?
+
+  categoria   Categoria?  @relation(fields: [categoriaId], references: [id])
+  categoriaId String?
+
+  fornecedor   Fornecedor? @relation(fields: [fornecedorId], references: [id])
+  fornecedorId String?
+
+  pecasOS      PecaOS[]
+  movimentacoes MovimentacaoEstoque[]
+  compras       CompraItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([codigo])
+  @@index([categoriaId])
+  @@map("produtos")
+}
+
+//////////////////// MOVIMENTAÇÕES DE ESTOQUE ////////////////////
+
+model MovimentacaoEstoque {
+  id            String           @id @default(uuid())
+  tipo          TipoMovimentacao
+  quantidade    Int
+  observacao    String?
+  data          DateTime         @default(now())
+  deleted       Boolean          @default(false)
+  deletedAt     DateTime?
+
+  precoUnitario  Decimal?
+  precoTotal     Decimal?
+
+  produto   Produto @relation(fields: [produtoId], references: [id])
+  produtoId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([produtoId])
+  @@index([data])
+  @@map("movimentacoes_estoque")
+}
+
+//////////////////// COMPRAS ////////////////////
+
+model Compra {
+  id            String      @id @default(uuid())
+  numero        String      @unique
+  data          DateTime    @default(now())
+  observacao    String?
+  deleted       Boolean     @default(false)
+  deletedAt     DateTime?
+
+  subtotal      Decimal
+  desconto      Decimal     @default(0)
+  total        Decimal
+
+  fornecedor   Fornecedor   @relation(fields: [fornecedorId], references: [id])
+  fornecedorId String
+
+  itens        CompraItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([numero])
+  @@index([fornecedorId])
+  @@map("compras")
+}
+
+model CompraItem {
+  id            String   @id @default(uuid())
+  quantidade    Int
+  precoUnitario Decimal
+  precoTotal    Decimal
+  deleted       Boolean  @default(false)
+  deletedAt     DateTime?
+
+  compra   Compra   @relation(fields: [compraId], references: [id], onDelete: Cascade)
+  compraId String
+
+  produto   Produto @relation(fields: [produtoId], references: [id])
+  produtoId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("compra_itens")
+}
+
+//////////////////// MANUTENÇÕES PROGRAMADAS ////////////////////
+
+model Manutencao {
+  id              String    @id @default(uuid())
+  tipo            String
+  dataProgramada   DateTime
+  dataRealizada   DateTime?
+  quilometragem   Int?
+  status          String
+  observacao      String?
+  deleted         Boolean   @default(false)
+  deletedAt       DateTime?
+
+  viatura   Viatura   @relation(fields: [viaturaId], references: [id])
+  viaturaId String
+
+  ordemServico   OrdemServico? @relation(fields: [ordemServicoId], references: [id])
+  ordemServicoId String?        @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([viaturaId])
+  @@map("manutencoes")
+}
+
+//////////////////// PERMISSÕES DE ACESSO À VIATURA ////////////////////
+
+model PermissaoAcesso {
+  id            String    @id @default(uuid())
+  tipo          String
+  status        String    @default("ATIVA")
+  dataInicio    DateTime  @default(now())
+  dataExpiracao DateTime?
+  preco         Decimal?
+  deleted       Boolean   @default(false)
+  deletedAt     DateTime?
+
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+  clienteId String
+
+  viatura   Viatura @relation(fields: [viaturaId], references: [id])
+  viaturaId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clienteId])
+  @@index([viaturaId])
+  @@map("permissoes_acesso")
+}
+
+//////////////////// HISTÓRICO DE SERVIÇOS ////////////////////
+
+model HistoricoServico {
+  id          String   @id @default(uuid())
+  data        DateTime @default(now())
+  veiculo     String
+  placa       String
+  servicos    String[]
+  valor       Decimal
+  status      String
+  observacoes String?
+  deleted     Boolean  @default(false)
+  deletedAt   DateTime?
+
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+  clienteId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clienteId])
+  @@map("historicos_servico")
+}
+
+//////////////////// CONFIGURAÇÕES DO SISTEMA ////////////////////
+
+model Configuracao {
+  id        String   @id @default(uuid())
+  chave     String   @unique
+  valor     String
+  descricao String?
+  deleted   Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("configuracoes")
+}
+
+//////////////////// AGENDAMENTOS ////////////////////
+
+model Agendamento {
+  id          String          @id @default(uuid())
+  data        DateTime
+  hora        String
+  status      StatusAgendamento @default(PENDENTE)
+  tipo        TipoAgendamento  @default(SERVICO)
+  observacoes String?
+  deleted     Boolean         @default(false)
+  deletedAt   DateTime?
+
+  veiculoInfo String?
+
+  cliente   Cliente     @relation(fields: [clienteId], references: [id])
+  clienteId String
+
+  viatura   Viatura?    @relation(fields: [viaturaId], references: [id])
+  viaturaId String?
+
+  servico   TipoServico? @relation(fields: [servicoId], references: [id])
+  servicoId String?
+
+  mecanico  Funcionario? @relation(fields: [mecanicoId], references: [id])
+  mecanicoId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([data])
+  @@index([hora])
+  @@index([status])
+  @@index([clienteId])
+  @@index([mecanicoId])
+  @@map("agendamentos")
+}
+
+model TipoServico {
+  id          String   @id @default(uuid())
+  nome        String
+  descricao   String?
+  preco       Decimal?
+  duracao     Int      @default(60)
+  ativo       Boolean  @default(true)
+  deleted     Boolean  @default(false)
+  deletedAt   DateTime?
+
+  agendamentos Agendamento[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("tipos_servico")
+}
+
+model HorarioTrabalho {
+  id          String   @id @default(uuid())
+  diaSemana   Int
+  horaInicio  String
+  horaFim     String
+  ativo       Boolean  @default(true)
+  deleted     Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([diaSemana])
+  @@map("horarios_trabalho")
+}
+
+model IntervaloAgendamento {
+  id              String   @id @default(uuid())
+  duracaoMinima   Int      @default(30)
+  duracaoMaxima   Int      @default(120)
+  intervaloSlot   Int      @default(30)
+  ativo           Boolean  @default(true)
+  deleted         Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("intervalos_agendamento")
+}
+
+//////////////////// BACKUP ////////////////////
+
+model Backup {
+  id          String      @id @default(uuid())
+  nome        String
+  tipo        TipoBackup
+  status      StatusBackup @default(PENDENTE)
+  tamanho     String?
+  caminho     String?
+  observacoes String?
+  deleted     Boolean     @default(false)
+  deletedAt   DateTime?
+
+  logs        LogBackup[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tipo])
+  @@index([status])
+  @@map("backups")
+}
+
+model ConfiguracaoBackup {
+  id              String   @id @default(uuid())
+  backupAutomatico Boolean  @default(true)
+  horarioBackup   String   @default("02:00")
+  frequencia      String   @default("DIARIO")
+  manterBackups   Int      @default(30)
+  comprimido      Boolean  @default(true)
+  criptografado   Boolean  @default(false)
+  ativo           Boolean  @default(true)
+  deleted         Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("configuracoes_backup")
+}
+
+model LogBackup {
+  id          String   @id @default(uuid())
+  acao        String
+  mensagem    String
+  detalhes    String?
+  sucesso     Boolean  @default(true)
+  deleted     Boolean  @default(false)
+
+  backup   Backup? @relation(fields: [backupId], references: [id])
+  backupId String?
+
+  createdAt DateTime @default(now())
+
+  @@index([acao])
+  @@index([backupId])
+  @@map("logs_backup")
+}
+
+//////////////////// FINANCEIRO ////////////////////
+
+model Fatura {
+  id              String        @id @default(uuid())
+  numero          String        @unique
+  status          StatusFatura  @default(PENDENTE)
+  data            DateTime      @default(now())
+  dataVencimento  DateTime
+  observacoes     String?
+  deleted         Boolean       @default(false)
+  deletedAt       DateTime?
+
+  subtotal        Decimal
+  totalIva        Decimal
+  total           Decimal
+
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+  clienteId String
+
+  itens      ItemFatura[]
+  pagamentos Pagamento[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([numero])
+  @@index([clienteId])
+  @@index([status])
+  @@map("faturas")
+}
+
+model ItemFatura {
+  id          String   @id @default(uuid())
+  descricao   String
+  quantidade  Int
+  precoUnitario Decimal
+  iva         Decimal
+  subtotal    Decimal
+  deleted     Boolean  @default(false)
+
+  fatura   Fatura  @relation(fields: [faturaId], references: [id], onDelete: Cascade)
+  faturaId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("itens_fatura")
+}
+
+model ContaReceber {
+  id              String      @id @default(uuid())
+  documento       String      @unique
+  descricao       String
+  valor           Decimal
+  dataVencimento  DateTime
+  status          StatusConta  @default(PENDENTE)
+  observacoes     String?
+  deleted         Boolean     @default(false)
+  deletedAt       DateTime?
+
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+  clienteId String
+
+  pagamentos Pagamento[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([documento])
+  @@index([clienteId])
+  @@index([status])
+  @@map("contas_receber")
+}
+
+model ContaPagar {
+  id              String      @id @default(uuid())
+  documento       String      @unique
+  nomeFornecedor  String
+  nifFornecedor   String?
+  descricao       String
+  valor           Decimal
+  dataVencimento  DateTime
+  status          StatusConta  @default(PENDENTE)
+  observacoes     String?
+  deleted         Boolean     @default(false)
+  deletedAt       DateTime?
+
+  fornecedorObj   Fornecedor? @relation(fields: [fornecedorId], references: [id])
+  fornecedorId    String?
+
+  pagamentos Pagamento[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([documento])
+  @@index([fornecedorId])
+  @@index([status])
+  @@map("contas_pagar")
+}
+
+model Pagamento {
+  id              String        @id @default(uuid())
+  valor           Decimal
+  formaPagamento  FormaPagamento
+  referencia      String?
+  observacoes     String?
+  data            DateTime      @default(now())
+  deleted         Boolean       @default(false)
+
+  fatura   Fatura?    @relation(fields: [faturaId], references: [id])
+  faturaId String?
+
+  contaReceber   ContaReceber? @relation(fields: [contaReceberId], references: [id])
+  contaReceberId String?
+
+  contaPagar   ContaPagar?  @relation(fields: [contaPagarId], references: [id])
+  contaPagarId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([faturaId])
+  @@index([contaReceberId])
+  @@index([contaPagarId])
+  @@map("pagamentos")
+}
+
+model MovimentacaoFinanceira {
+  id              String                  @id @default(uuid())
+  tipoMovimento   TipoMovimentoFinanceiro
+  valor           Decimal
+  descricao       String
+  formaPagamento  FormaPagamento
+  referencia      String?
+  categoria       String?
+  data            DateTime                @default(now())
+  deleted         Boolean                 @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([data])
+  @@index([categoria])
+  @@map("movimentacoes_financeiras")
+}
+
+model RelatorioFinanceiro {
+  id          String   @id @default(uuid())
+  tipo        String
+  periodo     String
+  dataGeracao DateTime @default(now())
+  dados       String
+  generatedBy String?
+
+  createdAt DateTime @default(now())
+
+  @@index([tipo])
+  @@index([periodo])
+  @@map("relatorios_financeiros")
+}
+
+model CategoriaGasto {
+  id          String   @id @default(uuid())
+  nome        String
+  tipo        String
+  parentId    String?
+  parent      CategoriaGasto? @relation("CatGastoPai", fields: [parentId], references: [id])
+  filhos      CategoriaGasto[] @relation("CatGastoPai")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categorias_gastos")
+}
+
+//////////////////// LOGS DE AUDITORIA ////////////////////
+
+model LogAuditoria {
+  id          String   @id @default(uuid())
+  acao        String
+  entidade    String
+  registroId  String
+  dadosAntigos String?
+  dadosNovos   String?
+  ip          String?
+  userAgent   String?
+  deleted     Boolean  @default(false)
+
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
+  usuarioId String?
+
+  createdAt DateTime @default(now())
+
+  @@index([entidade])
+  @@index([registroId])
+  @@index([acao])
+  @@map("logs_auditoria")
+}

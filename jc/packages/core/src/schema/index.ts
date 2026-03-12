@@ -1,0 +1,1 @@
+export * as OficinaSchemas from './oficina/Save.schema';
