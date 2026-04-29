@@ -1,0 +1,1 @@
+# Fix OrcamentoModal - Inputs compartilhados na Mão de Obra\n\n✅ 1. Criado este TODO.md\n✅ 2. Refactor concluído: MaoDeObraSectionFixed.tsx com estado per-row independente\n✅ 3. Teste: Abra OrcamentoModal → Adicione 3+ linhas mão de obra → Digite serviços diferentes → Confirmar independentes\n✅ 4. Arquivo original mantido como backup\n✅ 5. Task completa\n\nStatus: ✅ COMPLETO

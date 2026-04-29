@@ -1,40 +1,33 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Panel, PanelHeader, PanelBody } from '@/components/panel/panel';
+import { useOficina } from '@/hooks/useOficina';
 
 export default function DadosOficinaPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    nomeEmpresa: 'FLXMOTOR - OFICINA MECÂNICA',
-    nif: '5417123456',
-    endereco: 'Rua da Independência, 123',
-    bairro: 'Ingombota',
-    cidade: 'Luanda',
-    provincia: 'Luanda',
-    telefone: '+244 923 456 789',
-    email: 'geral@flxmotor.ao',
-    website: 'www.flxmotor.ao',
-    horarioFuncionamento: '08:00 - 17:00',
-    diasFuncionamento: 'Segunda a Sexta',
-    regimeIVA: 'Regime Geral',
-    numeroAlvara: 'ALV-2023/001',
-    dataConstituicao: '2020-01-15'
-  });
+const { oficina, saveOficina } = useOficina();
+  const [formData, setFormData] = useState(oficina);
+
+  useEffect(() => {
+    setFormData(oficina);
+  }, [oficina]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev: any) => ({ ...prev, [name]: value }));
   };
+
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    setTimeout(() => {
-      alert('Dados da oficina atualizados com sucesso!');
-      setIsLoading(false);
-    }, 1500);
+    saveOficina(formData as any);
+    alert('Dados da oficina atualizados com sucesso!'); 
+    setIsLoading(false);
   };
 
   return (

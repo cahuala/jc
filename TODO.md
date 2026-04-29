@@ -1,11 +1,22 @@
-# TODO List for FlxMotor Fixes
+# Correção PDV - Provider Scope Fix
 
-## Current Task: Fix produtosAtivos ReferenceError
-- [x] 1. Plan approved by user
-- [ ] 2. Create TODO.md ✅
-- [x] 3. Edit siv-platform/apps/frontend/src/app/servicos/diagnosticos-mecanicos/page.tsx (uncomment hook + loading handling) ✅
-- [x] 4. Test functionality (dropdown search loads active products) ✅ - uncommented hook, added nullish coalescing safety, loading condition
-- [x] 5. Update TODO.md with completion ✅
-- [ ] 6. Attempt completion
+## Status: 🔄 Em Progresso
 
+**Problema Identificado:** `usePDV must be used within PDVProvider`
+
+**Passos:**
+- [x] 1. Criar TODO.md
+- [x] 2. Reorganizar providers em layout.tsx (mover PDVProvider para topo)
+- [ ] 3. Testar /estoque/pdv (sem crash) - Execute `yarn turbo dev` e teste
+- [ ] 4. Verificar dados produtos/clientes (fix hooks se vazio)
+- [ ] 5. Implementar backend /venda POST
+- [ ] 6. Seed dados teste
+- [ ] 7. Teste fluxo completo venda
+- [ ] 8. Finalizar
+
+**Comandos pós-correção:**
+```
+yarn turbo dev
+# Acessar http://localhost:3000/estoque/pdv
+```
 

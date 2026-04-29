@@ -40,7 +40,7 @@ export default function EstoqueCategoriasPage() {
   };
 
   const handleSave = (categoria: Categoria) => {
-    console.log('Salvando categoria:', categoria);
+    
     handleCloseModal();
   };
 

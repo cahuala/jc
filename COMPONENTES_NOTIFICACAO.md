@@ -45,8 +45,7 @@ function ExemploPage() {
       type: 'danger',
       onConfirm: () => {
         // Lógica de exclusão
-        console.log('Item excluído:', item);
-        
+       
         // Mostrar toast de sucesso
         toast.showToast({
           message: `Item "${item.nome}" foi excluído com sucesso!`,

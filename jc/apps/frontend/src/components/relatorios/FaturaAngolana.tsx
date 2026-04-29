@@ -1,31 +1,40 @@
 import React from 'react';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useFatura } from '@/hooks/useFatura';
+import type { OficinaData } from '@/hooks/useOficina';
+
+const defaultOficina: OficinaData = {
+  nomeEmpresa: 'FLXMOTOR - OFICINA MECÂNICA',
+  nif: '5417123456',
+  endereco: 'Rua da Independência, 123',
+  bairro: 'Ingombota',
+  cidade: 'Luanda',
+  provincia: 'Luanda',
+  telefone: '+244 923 456 789',
+  email: 'geral@flxmotor.ao',
+  website: 'www.flxmotor.ao',
+};
 
 interface FaturaAngolanaProps {
+  faturaId: string;
   onClose: () => void;
-}
+};
 
-export default function FaturaAngolana({ onClose }: FaturaAngolanaProps) {
+export default function FaturaAngolana({ faturaId, onClose }: FaturaAngolanaProps) {
   const hoje = new Date();
-  const dataFormatada = hoje.toLocaleDateString('pt-AO');
+  const dataFormatada = new Date().toLocaleDateString('pt-AO');
 
-  const dadosFatura = {
-    numero: 'FT-2024/001',
-    cliente: {
-      nome: 'João Pereira Silva',
-      nif: '123456789',
-      endereco: 'Rua da Paz, 456 - Maianga, Luanda',
-      telefone: '+244 923 456 789'
-    },
-    itens: [
-      { descricao: 'Troca de Óleo 5W30', quantidade: 1, preco: 15000, total: 15000 },
-      { descricao: 'Filtro de Óleo', quantidade: 1, preco: 3500, total: 3500 },
-      { descricao: 'Mão de Obra', quantidade: 1, preco: 8000, total: 8000 }
-    ]
-  };
+  const { user } = useCurrentUser();
+  const oficina = user.oficina || defaultOficina;
 
-  const subtotal = dadosFatura.itens.reduce((sum, item) => sum + item.total, 0);
-  const iva = subtotal * 0.14;
-  const total = subtotal + iva;
+  const { data: dadosFatura, loading, error } = useFatura(faturaId);
+
+  if (loading) return <div>Carregando fatura...</div>;
+  if (error || !dadosFatura) return <div>Erro ao carregar fatura: {error}</div>;
+
+  const subtotal = dadosFatura.subtotal;
+  const iva = dadosFatura.totalIva;
+  const total = dadosFatura.total;
 
   const handlePrint = () => {
     const printContent = document.getElementById('fatura-print');
@@ -79,15 +88,15 @@ export default function FaturaAngolana({ onClose }: FaturaAngolanaProps) {
                       <tr>
                         <td style={{width: '60%', verticalAlign: 'top'}}>
                           <h1 style={{color: '#0066cc', fontSize: '28px', fontWeight: 'bold', margin: '0 0 10px 0'}}>
-                            FLXMOTOR
+                            {oficina.nomeEmpresa.split(' - ')[0] || 'FLXMOTOR'}
                           </h1>
                           <h2 style={{color: '#333', fontSize: '18px', margin: '0 0 15px 0'}}>
                             OFICINA MECÂNICA E SERVIÇOS AUTOMÓVEIS
                           </h2>
                           <div style={{fontSize: '14px', lineHeight: '1.6', color: '#555'}}>
-                            <div><strong>Endereço:</strong> Rua da Independência, 123 - Ingombota, Luanda</div>
-                            <div><strong>NIF:</strong> 5417123456 | <strong>Telefone:</strong> +244 923 456 789</div>
-                            <div><strong>Email:</strong> geral@flxmotor.ao | <strong>Web:</strong> www.flxmotor.ao</div>
+                            <div><strong>Endereço:</strong> {oficina.endereco}, {oficina.bairro || ''} - {oficina.cidade}, {oficina.provincia}</div>
+                            <div><strong>NIF:</strong> {oficina.nif} | <strong>Telefone:</strong> {oficina.telefone}</div>
+                            <div><strong>Email:</strong> {oficina.email} | <strong>Web:</strong> {oficina.website || ''}</div>
                           </div>
                         </td>
                         <td style={{width: '40%', textAlign: 'right', verticalAlign: 'top'}}>
@@ -109,9 +118,9 @@ export default function FaturaAngolana({ onClose }: FaturaAngolanaProps) {
                       </h4>
                       <div style={{fontSize: '14px', lineHeight: '1.8'}}>
                         <div><strong>Nome:</strong> {dadosFatura.cliente.nome}</div>
-                        <div><strong>NIF:</strong> {dadosFatura.cliente.nif}</div>
-                        <div><strong>Endereço:</strong> {dadosFatura.cliente.endereco}</div>
-                        <div><strong>Telefone:</strong> {dadosFatura.cliente.telefone}</div>
+                        <div><strong>NIF:</strong> {dadosFatura.cliente.nif || '---'}</div>
+                        <div><strong>Endereço:</strong> {dadosFatura.cliente.endereco || '---'}</div>
+                        <div><strong>Telefone:</strong> {dadosFatura.cliente.telefone || '---'}</div>
                       </div>
                     </div>
                   </div>
@@ -128,11 +137,11 @@ export default function FaturaAngolana({ onClose }: FaturaAngolanaProps) {
                     </thead>
                     <tbody>
                       {dadosFatura.itens.map((item, index) => (
-                        <tr key={index} style={{backgroundColor: index % 2 === 0 ? '#f8f9fa' : 'white'}}>
+                        <tr key={item.id || index} style={{backgroundColor: index % 2 === 0 ? '#f8f9fa' : 'white'}}>
                           <td style={{padding: '10px', border: '1px solid #dee2e6'}}>{item.descricao}</td>
                           <td style={{padding: '10px', textAlign: 'center', border: '1px solid #dee2e6'}}>{item.quantidade}</td>
-                          <td style={{padding: '10px', textAlign: 'right', border: '1px solid #dee2e6'}}>{item.preco.toLocaleString()}</td>
-                          <td style={{padding: '10px', textAlign: 'right', border: '1px solid #dee2e6', fontWeight: 'bold'}}>{item.total.toLocaleString()}</td>
+                          <td style={{padding: '10px', textAlign: 'right', border: '1px solid #dee2e6'}}>{item.precoUnitario.toLocaleString()}</td>
+                          <td style={{padding: '10px', textAlign: 'right', border: '1px solid #dee2e6', fontWeight: 'bold'}}>{item.subtotal.toLocaleString()}</td>
                         </tr>
                       ))}
                     </tbody>

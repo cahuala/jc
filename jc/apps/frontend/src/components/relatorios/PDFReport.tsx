@@ -1,4 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
+import { useOficina } from '@/hooks/useOficina';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 interface PDFReportProps {
   tipo: 'vendas' | 'servicos' | 'clientes' | 'financeiro' | 'performance';
@@ -14,6 +17,9 @@ export default function PDFReport({ tipo, dados, periodo, onClose }: PDFReportPr
     month: '2-digit', 
     year: 'numeric' 
   });
+
+  const { oficina } = useOficina();
+  const { user } = useCurrentUser();
 
   const getTitulo = () => {
     switch (tipo) {
@@ -73,10 +79,10 @@ export default function PDFReport({ tipo, dados, periodo, onClose }: PDFReportPr
                     </div>
                   </div>
                   <div className="col-8">
-                    <h3 className="mb-1 text-primary fw-bold">FLXMOTOR - OFICINA MECÂNICA</h3>
-                    <p className="mb-1">Rua da Independência, 123 - Luanda, Angola</p>
-                    <p className="mb-1">NIF: 5417123456 | Telefone: +244 923 456 789</p>
-                    <p className="mb-0">Email: geral@flxmotor.ao | www.flxmotor.ao</p>
+                    <h3 className="mb-1 text-primary fw-bold">{oficina.nomeEmpresa}</h3>
+                    <p className="mb-1">{oficina.endereco}, {oficina.bairro || ''} - {oficina.cidade}, {oficina.provincia}</p>
+                    <p className="mb-1">NIF: {oficina.nif} | Telefone: {oficina.telefone}</p>
+                    <p className="mb-0">Email: {oficina.email} | {oficina.website || ''}</p>
                   </div>
                   <div className="col-2 text-end">
                     <div className="border p-2">
@@ -208,7 +214,7 @@ export default function PDFReport({ tipo, dados, periodo, onClose }: PDFReportPr
                 <div className="row">
                   <div className="col-md-6">
                     <p className="mb-1"><strong>Responsável pelo Relatório:</strong></p>
-                    <p className="mb-1">Administrador do Sistema</p>
+                    <p className="mb-1">{user.nome}</p>
                     <p className="mb-0">Data de Geração: {dataFormatada}</p>
                   </div>
                   <div className="col-md-6 text-end">

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 /* eslint-disable prettier/prettier */
@@ -55,8 +56,6 @@ export class ProcessoController {
         const friendlyErrors = zodError.issues.map(
           (e) => `${e.path.join('.')} → ${e.message}`,
         );
-
-        console.log('Erros amigáveis:', friendlyErrors);
 
         throw new BadRequestException({
           message: 'Erro de validação nos dados enviados',

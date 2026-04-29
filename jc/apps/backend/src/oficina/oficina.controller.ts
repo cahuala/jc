@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
@@ -54,8 +55,6 @@ export class OficinaController {
         const friendlyErrors = error.issues.map(
           (e: any) => `${e.path.join('.')} → ${e.message}`,
         );
-
-        console.log('Erros amigáveis:', friendlyErrors);
 
         throw new BadRequestException({
           message: 'Erro de validação nos dados enviados',
