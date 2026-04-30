@@ -1,27 +1,48 @@
 services:
   - type: web
-    name: siv-platform-api
+    name: fixmotor-api
     env: node
-    plan: pro
+    plan: starter
     region: frankfurt
-    buildCommand: cd apps/api && npm install && npm run build
-    startCommand: cd apps/api && npm start
+    repo: https://github.com/cahuala/siv-platform
+    branch: main
+    rootDir: apps/api
+    buildCommand: npm install && npm run build
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 3000
+        value: 10000
       - key: DATABASE_URL
         value: postgresql://postgres.pwmzhttyyijryupcraro:1029pedronegocioS*@aws-1-eu-west-2.pooler.supabase.com:6543/postgres?pgbouncer=true
       - key: DIRECT_URL
         value: postgresql://postgres.pwmzhttyyijryupcraro:1029pedronegocioS*@aws-1-eu-west-2.pooler.supabase.com:5432/postgres
       - key: JWT_SECRET
-        value: flxmotor-prod-secret-2026-angola-oficina-mecanica-seguro-render
+        value: flxmotor-prod-secret-2026-angola-oficina-mecanica-seguro-render-fixmotor
       - key: FRONTEND_URL
-        value: https://siv-platform.onrender.com
+        value: https://fixmotor.onrender.com
       - key: BACKEND_URL
-        sync: false
+        value: https://fixmotor-api.onrender.com
       - key: SMS_PROVIDER
         value: mock
       - key: BACKUP_PROVIDER
         value: local
+    healthCheckPath: /health
+    
+  - type: web
+    name: fixmotor
+    env: node
+    plan: starter
+    region: frankfurt
+    repo: https://github.com/cahuala/siv-platform
+    branch: main
+    rootDir: apps/frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        value: https://fixmotor-api.onrender.com
+    healthCheckPath: /
