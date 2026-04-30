@@ -6,9 +6,14 @@ services:
     region: frankfurt
     repo: https://github.com/cahuala/siv-platform
     branch: main
-    rootDir: apps/api
-    buildCommand: npm install && npm run build
-    startCommand: npm start
+    buildCommand: |
+      # Instalar dependências na raiz (workspace)
+      npm install
+      # Build do pacote core primeiro
+      cd packages/core && npm install && npm run build && cd ../..
+      # Build da API
+      cd apps/api && npm install && npm run build
+    startCommand: cd apps/api && npm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -37,9 +42,12 @@ services:
     region: frankfurt
     repo: https://github.com/cahuala/siv-platform
     branch: main
-    rootDir: apps/frontend
-    buildCommand: npm install && npm run build
-    startCommand: npm start
+    buildCommand: |
+      # Instalar dependências na raiz
+      npm install
+      # Build do frontend
+      cd apps/frontend && npm install && npm run build
+    startCommand: cd apps/frontend && npm start
     envVars:
       - key: NODE_ENV
         value: production
