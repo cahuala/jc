@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: siv-platform-api
+    env: node
+    plan: pro
+    region: frankfurt
+    buildCommand: cd siv-platform/apps/api && npm install && npm run build
+    startCommand: cd siv-platform/apps/api && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: siv-platform-db
+          property: connectionString
+      - key: DIRECT_URL
+        fromDatabase:
+          name: siv-platform-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://siv-platform.onrender.com
+      - key: BACKEND_URL
+        sync: false
+
+databases:
+  - name: siv-platform-db
+    databaseName: siv_platform
+    plan: pro
+    region: frankfurt
